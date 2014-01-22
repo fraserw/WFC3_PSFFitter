@@ -20,4 +20,5 @@ doMagFit.py:
 aperture photometry. The psf fitting is done with ROOT's minuit in the WFC3_PSFFits
 module. The aperture photometry is done using pyraf in the WFC3_phot module.
 
-For further questions, please contact the author, Wesley Fraser (westhefras<SPAMSUCKS>@<SPAMSUCKS>gmail.com.  
+For further questions, please contact the author, Wesley Fraser (westhefras<SPAMSUCKS>@<SPAMSUCKS>gmail.com.
+  
