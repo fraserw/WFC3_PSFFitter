@@ -355,11 +355,9 @@ def phot(im,coords,radii,
     ldata=data.reshape(a*b)*1.0
     #ldata.sort()
     #median=ldata[a*b/2]
-    mmm=[]
-    for i in range(31):
-        mmm.append(ldata[int(random.random()*len(data))])
-    mmm.sort()
-    median=mmm[15]
+    
+    median=num.median(data)
+    
     #print float(median)
     for i in range(a):
         for j in range(4):
@@ -392,14 +390,17 @@ def phot(im,coords,radii,
 
                         x.append(j)
                         y.append(i)
-
+            
+            bad_x=num.array(x)
+            bad_y=num.array(y)
+            
             if len(x)==0: continue
 
             [d,f]=im.split('/')
             os.chdir(d)
             
             FILTER=FILTER.replace('W','w').replace('M','m')
-            obj=P.PSFFit(f+'.fits',1,FILTER,detector=detector,useMemory='n')
+            obj=P.PSFFit(f+'.fits',1,useMemory='n')
             obj.initObject(0,coords[kk][0]-1,coords[kk][1]-1,1,3.5)
             try: os.remove('genImage.fits')
             except: pass
@@ -412,10 +413,10 @@ def phot(im,coords,radii,
             psfHan.close()
             
             
-            #try: os.remove('genImage.fits')
-            #except: pass
-            #try: os.remove('genImagePSF.fits')
-            #except: pass
+            try: os.remove('genImage.fits')
+            except: pass
+            try: os.remove('genImagePSF.fits')
+            except: pass
             
             os.chdir('../')
             
@@ -425,19 +426,13 @@ def phot(im,coords,radii,
             ymin=max(0,yp-R)
             ymax=min(a,yp+R)
 
-            dsum=num.sum(data[ymin:ymax,xmin:xmax])
-            psfsum=num.sum(psfData[ymin:ymax,xmin:xmax])
-
-            for k in range(len(x)):
-                dsum-=data[y[k],x[k]]
-                psfsum-=psfData[y[k],x[k]]
-            dsum-=median*((ymax-ymin)*(xmax-xmin)-len(x))
+            dsum=num.sum(data[ymin:ymax,xmin:xmax]-median)-num.sum(data[ymin:ymax,xmin:xmax][bad_y-ymin,bad_x-xmin]-median)
+            psfsum=num.sum(psfData[ymin:ymax,xmin:xmax])-num.sum(psfData[ymin:ymax,xmin:xmax][bad_y-ymin,bad_x-xmin])
 
             multi=dsum/psfsum
-            for k in range(len(x)):
-                data[y[k],x[k]]=psfData[y[k],x[k]]*multi+median
+            data[bad_y,bad_x]=psfData[bad_y,bad_x]*multi+median
 
-    if linearInterp:
+    if linearInterp: #probably will fail if the peak of the psf is on a bad pixel!
         for kk in range(len(coords)):                    
             xp=int(coords[kk][0]-1+0.5)
             yp=int(coords[kk][1]-1+0.5)
@@ -526,7 +521,8 @@ def phot(im,coords,radii,
             os.remove('junk'+xxx+'_cent.fits1.ctr.1')
         except:
             pass
-        ha[1].data=data
+        for ii in range(a):
+            ha[1][ii,:].data=data[ii,:]
         ha.writeto('junk'+xxx+'_cent.fits')
 
 
@@ -563,7 +559,8 @@ def phot(im,coords,radii,
 
 
     data*=PHOTFLAM
-    ha[1].data=data
+    for ii in range(a):
+        ha[1].data[ii,:]=data[ii:,]
 
     try:
         os.remove('junk'+xxx+'.fits')
