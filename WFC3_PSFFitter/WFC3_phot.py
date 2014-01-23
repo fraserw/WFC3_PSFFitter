@@ -522,7 +522,7 @@ def phot(im,coords,radii,
         except:
             pass
         for ii in range(a):
-            ha[1][ii,:].data=data[ii,:]
+            ha[1].data[ii,:]=data[ii,:]
         ha.writeto('junk'+xxx+'_cent.fits')
 
 
@@ -560,7 +560,7 @@ def phot(im,coords,radii,
 
     data*=PHOTFLAM
     for ii in range(a):
-        ha[1].data[ii,:]=data[ii:,]
+        ha[1].data[ii,:]=data[ii,:]
 
     try:
         os.remove('junk'+xxx+'.fits')
@@ -616,14 +616,14 @@ def phot(im,coords,radii,
                 MS[i].append(-32768)
                 MES[i].append(-32768)
 
-    try:
-        os.remove('junk'+xxx+'_cent.fits')
-    except:
-        pass
-    try:
-        os.remove('junk'+xxx+'.fits')
-    except:
-        pass
+    #try:
+    #    os.remove('junk'+xxx+'_cent.fits')
+    #except:
+    #    pass
+    #try:
+    #    os.remove('junk'+xxx+'.fits')
+    #except:
+    #    pass
                     
 
     if cent<>'none':
