@@ -352,13 +352,14 @@ def phot(im,coords,radii,
     #fill in all the bad pixels using the median bg value around the images 
     #edges (4 pixels wide) and with a linear interpolation within the 
     #central area near each individual input coordinate
-    ldata=data.reshape(a*b)*1.0
+    #ldata=data.reshape(a*b)*1.0
     #ldata.sort()
     #median=ldata[a*b/2]
     
     median=num.median(data)
+    noise=num.std(data)
     
-    #print float(median)
+    """
     for i in range(a):
         for j in range(4):
             if qual[i][j]>0:
@@ -371,6 +372,7 @@ def phot(im,coords,radii,
                 data[j][i]=median
             if qual[a-j-1][i]>0:
                 data[a-j-1][i]=median
+    """
                 
     
 
@@ -382,6 +384,8 @@ def phot(im,coords,radii,
 
             x=[]
             y=[]
+            gx=[]
+            gy=[]
             for i in range(yp-R,yp+R):
                 for j in range(xp-R,xp+R):
                     if (j<0 or j>b or i<0 or i>a): continue
@@ -390,9 +394,14 @@ def phot(im,coords,radii,
 
                         x.append(j)
                         y.append(i)
+                    else:
+                        gx.append(j)
+                        gy.append(i)
             
             bad_x=num.array(x)
             bad_y=num.array(y)
+            good_x=num.array(gx)
+            good_y=num.array(gy)
             
             if len(x)==0: continue
 
@@ -426,10 +435,12 @@ def phot(im,coords,radii,
             ymin=max(0,yp-R)
             ymax=min(a,yp+R)
 
-            dsum=num.sum(data[ymin:ymax,xmin:xmax]-median)-num.sum(data[ymin:ymax,xmin:xmax][bad_y-ymin,bad_x-xmin]-median)
-            psfsum=num.sum(psfData[ymin:ymax,xmin:xmax])-num.sum(psfData[ymin:ymax,xmin:xmax][bad_y-ymin,bad_x-xmin])
 
-            multi=dsum/psfsum
+            dcut=data[good_y,good_x]
+            psfCut=psfData[good_y,good_x]
+            w=num.where(dcut>median+2.*median**0.5)[0]
+            multi=num.sum(dcut[w]/psfCut[w])/len(w)
+            
             data[bad_y,bad_x]=psfData[bad_y,bad_x]*multi+median
 
     if linearInterp: #probably will fail if the peak of the psf is on a bad pixel!
@@ -616,14 +627,14 @@ def phot(im,coords,radii,
                 MS[i].append(-32768)
                 MES[i].append(-32768)
 
-    #try:
-    #    os.remove('junk'+xxx+'_cent.fits')
-    #except:
-    #    pass
-    #try:
-    #    os.remove('junk'+xxx+'.fits')
-    #except:
-    #    pass
+    try:
+        os.remove('junk'+xxx+'_cent.fits')
+    except:
+        pass
+    try:
+        os.remove('junk'+xxx+'.fits')
+    except:
+        pass
                     
 
     if cent<>'none':
