@@ -12,33 +12,6 @@ import string
 #better version of centroid comes from sourceFind
 from sourceFind import centroid
 
-"""
-#this little bit of code gets a pixel weight centroid
-#give it the image name without .fits, central pixel x,y guesses, and 
-#half widths of centroid box (optional)
-def centroid(im, centx, centy, dx=3, dy=3):
-    #get the image data
-    ha=pyfits.open(im+'.fits')
-    header0=ha[0].header
-    header1=ha[1].header
-    data=ha[1].data.astype('f')
-    error=ha[2].data
-    qual=ha[3].data
-    (a,b)=data.shape
-    ha.close()
-
-    ncentx=0.0
-    sumx=0.0
-    ncenty=0.0
-    for i in range(int(centy-1)-dx,int(centy-1)+dx+1):
-        for j in range(int(centx-1)-dy,int(centx-1)+dy+1):
-            if not qual[i][j]:
-                d=data[i][j]
-                ncenty+=d*(i+0.5)
-                ncentx+=d*(j+0.5)
-                sumx+=d
-    return (ncentx/sumx+1,ncenty/sumx+1)
-"""
 
 
 def grid(fn,Filter,X,Y,m,z,detector,despace,Zpars,wx,wy,rot,r,R,star,
