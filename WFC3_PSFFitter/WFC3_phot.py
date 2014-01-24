@@ -438,7 +438,7 @@ def phot(im,coords,radii,
 
             dcut=data[good_y,good_x]
             psfCut=psfData[good_y,good_x]
-            w=num.where(dcut>median+2.*median**0.5)[0]
+            w=num.where(dcut>median+median**0.5)[0]
             multi=num.sum(dcut[w]/psfCut[w])/len(w)
             
             data[bad_y,bad_x]=psfData[bad_y,bad_x]*multi+median
