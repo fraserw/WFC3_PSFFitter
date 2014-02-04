@@ -383,11 +383,12 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
         data=psfsInMemory[subPSFName]
         header=psfHeadersInMemory[subPSFName]
     
+    
     #subsample the data
     data=num.repeat(num.repeat(data,trueSubFactor,axis=0),trueSubFactor,axis=1)
     (aa,bb)=data.shape
-    
 
+        
     #add multiple psfs to account for trailing.
     if star:
         starShiftsX=[]
@@ -398,21 +399,36 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
     else:
         starShiftsX=[0.]
         starShiftsY=[0.]
-
+        
+    print starShiftsX,starShiftsY
+    
     if len(starShiftsX)>1:
         origData=data*1.0
         data*=0.0
         for i in range(len(starShiftsX)):
-            ymin=max(0,-starShiftsY[i])
-            ymax=min(aa,aa-starShiftsY[i])
-            xmin=max(0,-starShiftsX[i])
-            xmax=min(bb,bb-starShiftsX[i])
-            Ymin=max(0,starShiftsY[i])
-            Ymax=min(aa,aa+starShiftsY[i])
-            Xmin=max(0,starShiftsX[i])
-            Xmax=min(bb,bb+starShiftsX[i])
-            data[ymin:ymax,xmin:xmax]+=origData[Ymin:Ymax,Xmin:Xmax]
+            if starShiftsY[i]>=0:
+                ymin=starShiftsY[i]
+                ymax=aa
+                Ymin=0
+                Ymax=aa-starShiftsY[i]
+            else:
+                ymin=0
+                ymax=aa-abs(starShiftsY[i])
+                Ymin=abs(starShiftsY[i])
+                Ymax=aa
+            if starShiftsX[i]>=0:
+                xmin=starShiftsX[i]
+                xmax=bb
+                Xmin=0
+                Xmax=bb-starShiftsX[i]
+            else:
+                xmin=0
+                xmax=bb-abs(starShiftsX[i])
+                Xmin=abs(starShiftsX[i])
+                Xmax=bb
+            
             #print ymin,ymax,xmin,xmax,Ymin,Ymax,Xmin,Xmax,starShiftsX,starShiftsY
+            data[ymin:ymax,xmin:xmax]+=origData[Ymin:Ymax,Xmin:Xmax]
     data/=num.sum(data)
 
 
