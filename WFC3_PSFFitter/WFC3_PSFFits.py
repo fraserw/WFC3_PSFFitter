@@ -261,7 +261,7 @@ def TinyTim(filt,x,y,name,workDir,detector,psfRad=3.0,despace=0.0,Zpars=False):
     command=tinyPath+'tiny1 '+name+'.par <'+name+'.inp' #Canfar
     #command='/usr/local/bin/tt/tiny1 '+name+'.par <'+name+'.inp' #Local
     c1=command
-    print command
+    #print command
     comStr=commands.getoutput(command)
 
     if Zpars:
@@ -400,7 +400,6 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
         starShiftsX=[0.]
         starShiftsY=[0.]
         
-    print starShiftsX,starShiftsY
     
     if len(starShiftsX)>1:
         origData=data*1.0
