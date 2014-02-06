@@ -542,6 +542,7 @@ def phot(im,coords,radii,
 
         iraf.center(image='junk'+xxx+'_cent.fits[1]',coords='spot',verify=no,interactive=no)
         Zing= iraf.txdump(textfiles = 'junk'+xxx+'_cent.fits1.ctr.1', fields = 'XCENTER,YCENTER', expr=iraf.yes, Stdout=1)
+        
         try:
             os.remove('junk'+xxx+'_cent.fits1.ctr.1')
         except:
@@ -550,7 +551,7 @@ def phot(im,coords,radii,
         XC=[]
         YC=[]
         ZZ=Zing[0].split()
-        for ii in range(len(ZZ)):
+        for ii in range(len(ZZ)/2):
             if 'INDEF' not in ZZ[0]:
                 XC.append(float(ZZ[0]))
                 YC.append(float(ZZ[1]))
