@@ -340,14 +340,14 @@ def phot(im,coords,radii,
     badHan=open(im+'.fits.badPix')
     dunk=badHan.readlines()
     badHan.close()
-    badPix=[]
+    badPixManual=[]
     for ii in range(len(dunk)):
         s=dunk[ii].split()
         xbp=int(float(s[0]))
         ybp=int(float(s[1]))
         for yy in range(-1,2):
             for xx in range(-1,2):
-                badPix.append([xbp-1+yy,ybp-1+xx])
+                badPixManual.append([xbp-1+xx,ybp-1+yy])
 
     #fill in all the bad pixels using the median bg value around the images 
     #edges (4 pixels wide) and with a linear interpolation within the 
@@ -358,6 +358,10 @@ def phot(im,coords,radii,
     
     median=num.median(data)
     noise=num.std(data)
+    
+    #at least mark each manually identified bac pixel with the median of the image
+    for ii in range(len(badPixManual)):
+            data[badPixManual[ii][1],badPixManual[ii][0]]=median
     
     """
     for i in range(a):
@@ -390,7 +394,7 @@ def phot(im,coords,radii,
                 for j in range(xp-R,xp+R):
                     if (j<0 or j>b or i<0 or i>a): continue
                     
-                    if qual[i][j]>0 or ([j,i] in badPix):
+                    if qual[i][j]>0:# or ([j,i] in badPixManual):
 
                         x.append(j)
                         y.append(i)
