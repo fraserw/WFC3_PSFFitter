@@ -376,8 +376,7 @@ def phot(im,coords,radii,
                 data[j][i]=median
             if qual[a-j-1][i]>0:
                 data[a-j-1][i]=median
-    """
-                
+    """          
     
 
     if psfInterp:
