@@ -88,13 +88,14 @@ def getBG(image,x,y,delta,close=12):
         image=han[1].data
         han.close()
 
+    
     a=image[y-delta:y+delta,x-delta:x+delta]
     b=[]
     for qu in range(a.shape[0]):
         for quu in range(a.shape[1]):
             if abs(delta-qu)>close and abs(delta-quu)>close:
                 b.append(a[qu][quu])
-                
+    
     av=num.sum(b)/(len(b))
     std=num.sqrt(num.sum((b-av)**2)/len(b))
 
