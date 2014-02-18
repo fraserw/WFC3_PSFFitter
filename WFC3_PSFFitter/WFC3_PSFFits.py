@@ -114,7 +114,7 @@ def getBG(image,x,y,delta,close=12):
     
     vals=[]
     for qu in range(4*delta):
-        rx=int(random.random()*len(b))
+        rx=int(random.random()*(len(b)-1))
 
         vals.append(b[rx])
     vals.sort()
