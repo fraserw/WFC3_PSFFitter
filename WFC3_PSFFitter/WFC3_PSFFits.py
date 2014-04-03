@@ -219,7 +219,7 @@ def TinyTim(filt,x,y,name,workDir,detector,psfRad=3.0,despace=0.0,Zpars=False):
 
 ##########
     #To be sure that despace = 0.0 doesn't occur
-    #this is a hack for an unexplained behaviour in the way TinyTim3 interprets despace values.
+    #this is a hack for an unexplained behaviour in the way Tim3 interprets despace values.
     if rdespace == 0.0:
         rdespace+=0.01
 ##########
@@ -267,7 +267,7 @@ def TinyTim(filt,x,y,name,workDir,detector,psfRad=3.0,despace=0.0,Zpars=False):
 
     if Zpars:
         addDistort(name+'.par',Zpars)
-
+        
     #commands.getoutput('rm '+name+'.inp')
     
     #subsample the psf with tiny2
@@ -318,9 +318,9 @@ def addDistort(parFile,Zvals):
     fileData=fileHan.readlines()
     fileHan.close()
 
-
+    
     for ii in range(len(fileData)):
-        if 'Z4-Z8' in fileData[ii]:continue
+        #if 'Z4-Z8' in fileData[ii]:continue#not sure why this line is here
         if 'Z5' in fileData[ii] and Zvals[0]<>0.:
             fileData[ii]='  %2.5f%s'%(Zvals[0],fileData[ii][9:])
             #fileData[ii]='  '+format(Zvals[0],"2.5f")+fileData[ii][9:]
@@ -330,7 +330,7 @@ def addDistort(parFile,Zvals):
         elif 'Z7' in fileData[ii] and Zvals[2]<>0.: 
             fileData[ii]='  %2.5f%s'%(Zvals[2],fileData[ii][9:])
             #fileData[ii]='  '+format(Zvals[2],"2.5f")+fileData[ii][9:]
-        elif 'Z8' in fileData[ii] and Zvals[3]<>0.:
+        elif ('Z8' in fileData[ii] and 'Set' not in fileData[ii]) and Zvals[3]<>0.:
             fileData[ii]='  %2.5f%s'%(Zvals[3],fileData[ii][9:])
             #fileData[ii]='  '+format(Zvals[3],"2.5f")+fileData[ii][9:]
         elif 'Z9' in fileData[ii] and Zvals[4]<>0.:
@@ -342,7 +342,8 @@ def addDistort(parFile,Zvals):
         elif 'Z11' in fileData[ii] and Zvals[6]<>0.:
             fileData[ii]='  %2.5f%s'%(Zvals[6],fileData[ii][9:])
             #fileData[ii]='  '+format(Zvals[6],"2.5f")+fileData[ii][9:]
-
+            
+        
     fileHan=open(parFile,'w+')
     for ii in range(len(fileData)):
         print>>fileHan,fileData[ii],
@@ -761,6 +762,7 @@ def fcn(npar, gin, f, par, iflag):
      f[0]=out/(npixel-target.freePars)
 
      print 
+     print f[0]
      print str(f[0])[:7],  str(Z)[:7], str(dE[0])[:7],str(dE[1])[:7],str(dE[2])[:7],str(despace)[:4],
      if Z5<>0 or Z6<>0 or Z7<>0 or Z8<>0 or Z9<>0 or Z10<>0 or Z11<>0:
          print
