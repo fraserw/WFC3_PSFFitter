@@ -281,6 +281,7 @@ def phot(im,coords,radii,
         PHOTZPT=float(header1['PHOTZPT'])
         PHOTFLAM=float(header1['PHOTFLAM'])
         data/=EXPTIME
+        error/=EXPTIME
     else:
         PHOTZPT=float(header0['PHOTZPT'])
         PHOTFLAM=float(header0['PHOTFLAM'])
@@ -334,6 +335,7 @@ def phot(im,coords,radii,
         Mx=mx+XSIZE+1
     PAMdata=PAMhan[1].data.astype('f')[my:My,mx:Mx]
     data*=PAMdata
+    error*=PAMdata
     #data/=flatdat
 
     #get the hand-selected bad-pixel map
@@ -574,6 +576,7 @@ def phot(im,coords,radii,
 
 
     data*=PHOTFLAM
+    error*=PHOTFLAM
     for ii in range(a):
         ha[1].data[ii,:]=data[ii,:]
 
@@ -584,6 +587,31 @@ def phot(im,coords,radii,
 
     ha.writeto('junk'+xxx+'.fits')
     ha.close()
+
+
+    #get the quadrature sum photometric error approximately
+    repFac=5
+    E=num.repeat(num.repeat(error,repFac,axis=0),repFac,axis=1)/float(repFac*repFac)
+    xcoord=num.repeat(num.array([num.arange(b*repFac)+1.]),a*repFac,axis=0)/float(repFac)
+    ycoord=num.transpose(xcoord)
+
+
+    ES=[]
+    for i in range(len(coords)):
+        ES.append([])
+        for kk in range(len(radii)):
+            EEr=E*1.0
+            dist=((xcoord-XC[i])**2+(ycoord-YC[i])**2)**0.5
+            w=num.where(dist<radii[kk])
+            EEr[w]*=0.0
+
+            EE=num.zeros([a,b]).astype(float)
+            for j in range(int(XC[i]-radii[kk])-2,int(XC[i]+radii[kk])+2):
+                for jj in range(int(YC[i]-radii[kk])-2,int(YC[i]+radii[kk])+2):
+                    EE[jj,j]+=num.sum(EEr[jj:repFac*(jj+1),j:repFac*(j+1)])
+                    print EE[jj,j]
+            ES[i].append(num.sqrt(num.sum(EE**2)))
+            
 
 
 
@@ -639,7 +667,11 @@ def phot(im,coords,radii,
         os.remove('junk'+xxx+'.fits')
     except:
         pass
-                    
+
+    print MS
+    print MES
+    print ES
+    sys.exit()
 
     if cent<>'none':
         return (MS,MES,median,XC,YC)

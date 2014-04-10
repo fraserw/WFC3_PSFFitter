@@ -348,6 +348,8 @@ def addDistort(parFile,Zvals):
     for ii in range(len(fileData)):
         print>>fileHan,fileData[ii],
     fileHan.close()
+    print '\n&&&&&',parFile,'\n'
+    
 
 def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,useMemory='n',useHeaderKernel=False,star=False):
     """
