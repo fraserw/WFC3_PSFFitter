@@ -577,6 +577,7 @@ def phot(im,coords,radii,
 
     data*=PHOTFLAM
     error*=PHOTFLAM
+    
     for ii in range(a):
         ha[1].data[ii,:]=data[ii,:]
 
@@ -602,15 +603,11 @@ def phot(im,coords,radii,
         for kk in range(len(radii)):
             EEr=E*1.0
             dist=((xcoord-XC[i])**2+(ycoord-YC[i])**2)**0.5
-            w=num.where(dist<radii[kk])
+            w=num.where(dist>radii[kk])
             EEr[w]*=0.0
+            
 
-            EE=num.zeros([a,b]).astype(float)
-            for j in range(int(XC[i]-radii[kk])-2,int(XC[i]+radii[kk])+2):
-                for jj in range(int(YC[i]-radii[kk])-2,int(YC[i]+radii[kk])+2):
-                    EE[jj,j]+=num.sum(EEr[jj:repFac*(jj+1),j:repFac*(j+1)])
-                    print EE[jj,j]
-            ES[i].append(num.sqrt(num.sum(EE**2)))
+            ES[i].append(num.sqrt(num.sum(EEr**2)))
             
 
 
@@ -649,6 +646,9 @@ def phot(im,coords,radii,
                 if aperCorrs<>[]: magVal-=aperCorrs[i]
                 MS[i].append(magVal)
                 
+                ES[i][kk]*=2.5/num.log(10)
+                ES[i][kk]/=float(ZZ[1])
+                
                 flux=float(ZZ[1])/PHOTFLAM
                 dflux=num.sqrt(float(ZZ[2])/PHOTFLAM)
 
@@ -668,15 +668,11 @@ def phot(im,coords,radii,
     except:
         pass
 
-    print MS
-    print MES
-    print ES
-    sys.exit()
 
     if cent<>'none':
-        return (MS,MES,median,XC,YC)
+        return (MS,ES,median,XC,YC)
     else:
-        return (MS,MES,median)
+        return (MS,ES,median)
 
 
 
