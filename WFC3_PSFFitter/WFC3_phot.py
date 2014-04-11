@@ -572,7 +572,12 @@ def phot(im,coords,radii,
 
         iraf.centerpars.calgori=cent
         iraf.centerpars.saveParList()
-
+    else:
+        XC=[]
+        YC=[]
+        for ii in range(len(coords)):
+            XC.append(coords[ii][0])    
+            YC.append(coords[ii][1])
 
 
     data*=PHOTFLAM
