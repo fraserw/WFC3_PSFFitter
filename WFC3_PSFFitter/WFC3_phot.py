@@ -596,11 +596,12 @@ def phot(im,coords,radii,
 
 
     #get the quadrature sum photometric error approximately
-    repFac=5
+    repFac=1
     E=num.repeat(num.repeat(error,repFac,axis=0),repFac,axis=1)/float(repFac*repFac)
-    xcoord=num.repeat(num.array([num.arange(b*repFac)+1.]),a*repFac,axis=0)/float(repFac)
-    ycoord=num.transpose(xcoord)
+    xcoord=num.repeat(num.array([num.arange(b*repFac)+1.]),(a)*repFac,axis=0)/float(repFac)
+    ycoord=num.repeat(num.transpose(num.array([num.arange(a*repFac)+1.])),b*repFac,axis=1)/float(repFac)
 
+    
 
     ES=[]
     for i in range(len(coords)):
