@@ -612,7 +612,6 @@ def phot(im,coords,radii,
             w=num.where(dist>radii[kk])
             EEr[w]*=0.0
             
-
             ES[i].append(num.sqrt(num.sum(EEr**2)))
             
 
