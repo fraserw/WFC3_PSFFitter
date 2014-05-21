@@ -477,6 +477,8 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
     trimmed_data=num.sum(data_view,axis=(3,1))
     trimmed_data/=num.sum(trimmed_data)
 
+
+
     #now convolve the entire thing with the global Kernel
     if useHeaderKernel or dE==[0.0,0.0,0.0]:
         kernel=[]
@@ -488,7 +490,7 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
         print "Using header kernel for CTE."
     else:
         kernel=GU.getKernel(dE[0],dE[1],dE[2])
-    convData=convolve2d(trimmed_data,kernel)
+    convData=convolve2d(trimmed_data,kernel)    
     return convData
 
 
@@ -875,7 +877,7 @@ def fcnScipy(par,Z=0.0,minx=0,maxx=0,miny=0,maxy=0,nObj=0):
 
 class PSFFit:
 
-     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace=0.0,refImDir='../refImages',useMemory='n',subSampFactor=55):
+     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace=0.0,refImDir='../refImages',useMemory='n',subSampFactor=55, includeResidual=True):
 
          #the psf subsampling factor (not the one used in TinyTim, which we leave at 5)
          self.subSampFactor=subSampFactor
@@ -1018,6 +1020,11 @@ class PSFFit:
          self.dE=[0.0,0.0,0.0]
          self.Zpars=False
          self.freePars=3*self.nObj
+
+         #load the residual file
+         self.psfResid=[]
+         with pyfits.open(refImDir+'/'+'residual_x10_%s.fits'%(self.filter.lower())) as resHan:
+             self.psfResid=resHan[0].data  
 
          #the object parameters
          self.objects=[]
@@ -1265,6 +1272,68 @@ class PSFFit:
              """
              self.image['psf'][rsY:reY,rsX:reX]+=self.objects[cci]['M']*imDat[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
 
+             
+             #add in the residual image
+             if not self.psfResid==[]:
+                 residualImage=self.psfResid
+                 (Y,X)=residualImage.shape
+                 #centroid of the residual image is at 95,95 in 10x oversampled
+                 
+                 start=Y/2+1
+                 
+                 x0=self.objects[cci]['x']
+                 y0=self.objects[cci]['y']
+                 rx0=(X-start)/2+10.0*(x0-int(x0))
+                 ry0=(Y-start)/2+10.0*(y0-int(y0))
+                 offX=int(rx0-X/2)
+                 offY=int(ry0-Y/2)
+                 black=residualImage*0.0       
+                 if offX<0:
+                     c=abs(offX)
+                     d=X
+                     C=0
+                     D=X+offX
+                 else:
+                     c=0
+                     d=X-offX
+                     C=abs(offX)
+                     D=X   
+                 if offY<0:
+                     a=abs(offY)
+                     b=Y
+                     A=0
+                     B=Y+offY
+                 else:
+                     a=0
+                     b=Y-offY
+                     A=abs(offY)
+                     B=Y   
+                 black[A:B,C:D]=residualImage[a:b,c:d]
+
+
+                 binnedResidualImage=[]
+                 for ii in range(0,len(black),10):
+                     if ii>=len(black)-10: break
+                        binnedResidualImage.append([])
+                     for jj in range(0,len(black[ii]),10):
+                         if jj>=len(black[ii])-10: break
+                         binnedResidualImage[len(binnedResidualImage)-1].append(num.sum(black[ii:ii+10,jj:jj+10]))
+                 binnedResidualImage=num.array(binnedResidualImage)/100.
+                 (yLen,xLen)=binnedResidualImage.shape
+
+                 startX=x-xLen/2
+                 endX=x+xLen/2
+                 startY=y-yLen/2
+                 endY=y+yLen/2
+                 rsX=max(0,startX)
+                 reX=min(len(self.image['psf'][0])-1,endX)
+                 rsY=max(0,startY)
+                 reY=min(len(self.image['psf'])-1,endY)
+
+                 #print self.objects[cci]['M']*binnedResidualImage[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
+                 #sys.exit()
+                 self.image['psf'][rsY:reY,rsX:reX]+=self.objects[cci]['M']*binnedResidualImage[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
+             
 
          if write<>'n':
              commands.getoutput('rm genImagePSF.fits')
