@@ -1022,9 +1022,10 @@ class PSFFit:
          self.freePars=3*self.nObj
 
          #load the residual file
-         self.psfResid=[]
-         with pyfits.open(refImDir+'/'+'residual_x10_%s.fits'%(self.filter.lower())) as resHan:
-             self.psfResid=resHan[0].data  
+         self.psfResid=[]       
+         if includeResidual:
+             with pyfits.open(refImDir+'/'+'residual_x10_%s.fits'%(self.filter.lower())) as resHan:
+                 self.psfResid=resHan[0].data  
 
          #the object parameters
          self.objects=[]
@@ -1274,17 +1275,15 @@ class PSFFit:
 
              
              #add in the residual image
-             if not self.psfResid==[]:
+             if self.psfResid<>[]:
                  residualImage=self.psfResid
                  (Y,X)=residualImage.shape
                  #centroid of the residual image is at 95,95 in 10x oversampled
-                 
-                 start=Y/2+1
-                 
+
                  x0=self.objects[cci]['x']
                  y0=self.objects[cci]['y']
-                 rx0=(X-start)/2+10.0*(x0-int(x0))
-                 ry0=(Y-start)/2+10.0*(y0-int(y0))
+                 rx0=(X-10)/2+10.0*(x0-int(x0))
+                 ry0=(Y-10)/2+10.0*(y0-int(y0))
                  offX=int(rx0-X/2)
                  offY=int(ry0-Y/2)
                  black=residualImage*0.0       
@@ -1314,7 +1313,7 @@ class PSFFit:
                  binnedResidualImage=[]
                  for ii in range(0,len(black),10):
                      if ii>=len(black)-10: break
-                        binnedResidualImage.append([])
+                     binnedResidualImage.append([])
                      for jj in range(0,len(black[ii]),10):
                          if jj>=len(black[ii])-10: break
                          binnedResidualImage[len(binnedResidualImage)-1].append(num.sum(black[ii:ii+10,jj:jj+10]))
@@ -1333,8 +1332,11 @@ class PSFFit:
                  #print self.objects[cci]['M']*binnedResidualImage[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
                  #sys.exit()
                  self.image['psf'][rsY:reY,rsX:reX]+=self.objects[cci]['M']*binnedResidualImage[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
-             
 
+                 #hdu=pyfits.PrimaryHDU(self.image['psf'])
+                 #list=pyfits.HDUList([hdu])
+                 #list.writeto('junk.fits')
+                 #sys.exit()
          if write<>'n':
              commands.getoutput('rm genImagePSF.fits')
              hdu=pyfits.PrimaryHDU(self.image['psf'])
