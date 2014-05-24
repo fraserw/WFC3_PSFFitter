@@ -52,6 +52,9 @@ from scipy import interpolate as interp,signal
 
 import distutils.spawn
 
+import focusModel
+import ephem as eph
+
 #Kernel=num.array([[0.0125,0.05,0.0125],[0.05,0.75,0.05],[0.0125,0.05,0.0125]])
 psfsInMemory={}
 psfHeadersInMemory={}
@@ -877,7 +880,7 @@ def fcnScipy(par,Z=0.0,minx=0,maxx=0,miny=0,maxy=0,nObj=0):
 
 class PSFFit:
 
-     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace=0.0,refImDir='../refImages',useMemory='n',subSampFactor=55, includeResidual=True):
+     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace=0.0,refImDir='../refImages',useMemory='n',subSampFactor=55, includeResidual=False):
 
          #the psf subsampling factor (not the one used in TinyTim, which we leave at 5)
          self.subSampFactor=subSampFactor
@@ -902,7 +905,10 @@ class PSFFit:
          #necessary header information
          self.header=self.realImageHan[0].header
          self.header1=self.realImageHan[1].header
+         date=eph.date(self.header['DATE-OBS']+' '+self.header['TIME-OBS'])
+         self.mjd=date+15019.5
 
+         
          if detector=='':
              if 'UVIS1' in self.header['APERTURE']:
                  self.detector='uv1'
@@ -1024,8 +1030,13 @@ class PSFFit:
          #load the residual file
          self.psfResid=[]       
          if includeResidual:
+             model=focusModel.focusModel()
+             focus=model(self.mjd)
+               
              with pyfits.open(refImDir+'/'+'residual_x10_%s.fits'%(self.filter.lower())) as resHan:
-                 self.psfResid=resHan[0].data  
+                 for i in range(len(resHan)):
+                     if focus>=resHan[i].header['FOCLOW'] and focus<=resHan[i].header['FOCHIGH']:
+                         self.psfResid=resHan[i].data  
 
          #the object parameters
          self.objects=[]
@@ -1538,11 +1549,11 @@ class Binary_PSFFit:
 #this is to do the minimization
 class Min4PSFFit:
 
-    def __init__(self, realIm, numObj, objPars, filter='',detector='',despace=0.0,Zpars=False,useMemory='n',star=False,psfSubSampFactor=55):
+    def __init__(self, realIm, numObj, objPars, filter='',detector='',Zpars=False,useMemory='n',star=False,psfSubSampFactor=55,includeResidual=False):
         global mask
         mask=-1.0
         global target
-        target =PSFFit(realIm, numObj, filter=filter,despace=despace,detector=detector,useMemory=useMemory,subSampFactor=psfSubSampFactor)
+        target =PSFFit(realIm, numObj, filter=filter,detector=detector,useMemory=useMemory,subSampFactor=psfSubSampFactor,includeResidual=includeResidual)
 
         for i in range(numObj):
             if not star:
@@ -1922,15 +1933,15 @@ class Min4PSFFit:
         else:
             return self.target.getPhotometry()
             
-    def createImages(self,doWithoutMin=False):
+    def createImages(self,doWithoutMin=False,preNames=['model_','modelpsf_','diff_']):
         if not (self.runMinVar or doWithoutMin):
             print "Haven't produced a minimum yet, nor have you stated that this is OK!"
             return None
         else:
             self.target.produceImage(write='y')
-            modelName='model_%s'%(self.target.filename)
-            psfName='modelpsf_%s'%(self.target.filename)
-            diffName='diff_%s'%(self.target.filename)
+            modelName=preNames[0]+'%s'%(self.target.filename)
+            psfName=preNames[1]+'%s'%(self.target.filename)
+            diffName=preNames[2]+'%s'%(self.target.filename)
             os.system('mv genImage.fits %s'%(modelName))
             os.system('mv genImagePSF.fits %s'%(psfName))
             self.target.imageDiff(name=diffName,write='y')
