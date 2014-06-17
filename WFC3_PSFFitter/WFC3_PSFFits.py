@@ -75,6 +75,7 @@ def initMemory(psfDir):
                 except:pass
             imHan.close()
             
+            
             psfsInMemory[ii]=imDat*1.0
             psfHeadersInMemory[ii]=headCards[:]
     print ".done."
