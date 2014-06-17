@@ -68,7 +68,11 @@ def initMemory(psfDir):
         if ii not in psfsInMemory:
             imHan=pyfits.open(ii)
             imDat=imHan[0].data
-            headCards=imHan[0].header.ascardlist()
+            items=imhan[0].header.items()
+            headCards=[]
+            for iii in range(len(items)):
+                try:headCards.append(items[iii][0]+' '+items[iii][1])
+                except:pass
             imHan.close()
             
             psfsInMemory[ii]=imDat*1.0
@@ -381,7 +385,11 @@ def superPSFResample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=105,use
         print "Getting "+subPSFName+" file from hd"
         imhan=pyfits.open(subPSFName)
         data=imhan[0].data
-        header=imhan[0].header.ascardlist()
+        items=imhan[0].header.items()
+        header=[]
+        for iii in range(len(items)):
+            try:header.append(items[iii][0]+' '+items[iii][1])
+            except:pass
         imhan.close()
         
         psfsInMemory[subPSFName]=data*1.0
@@ -520,7 +528,11 @@ def superPSFResamplewInterp(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],subSampFactor=
          print "Getting "+subPSFName+" file from hd"
          imhan=pyfits.open(subPSFName)
          data=imhan[0].data
-         header=imhan[0].header.ascardlist()
+         items=imhan[0].header.items()
+         header=[]
+         for iii in range(len(items)):
+             try:header.append(items[iii][0]+' '+items[iii][1])
+             except:pass
          imhan.close()
 
          psfsInMemory[subPSFName]=data*1.0
@@ -619,7 +631,11 @@ def resample(subPSFName,xCen,yCen,dE=[0.0,0.0,0.0],useMemory='n',useHeaderKernel
         print "Getting "+subPSFName+" file from hd"
         imhan=pyfits.open(subPSFName)
         data=imhan[0].data
-        header=imhan[0].header.ascardlist()
+        items=imhan[0].header.items()
+        header=[]
+        for iii in range(len(items)):
+            try:header.append(items[iii][0]+' '+items[iii][1])
+            except:pass
         imhan.close()
         
         psfsInMemory[subPSFName]=data*1.0
