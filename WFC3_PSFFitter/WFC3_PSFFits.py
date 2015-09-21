@@ -28,16 +28,17 @@
 #
 #####
 
+
 import numpy as num
 #from numpy.fft import fft2, ifft2
 import commands
 import os
 import glob
 
-import ROOT   
+#import ROOT
 from array import array  #needed by root for the input arglists
 
-import pyfits
+from astropy.io import fits as pyfits
 
 from scipy.optimize import optimize
 from scipy import special as spec
@@ -896,7 +897,7 @@ def fcnScipy(par,Z=0.0,minx=0,maxx=0,miny=0,maxy=0,nObj=0):
 
 class PSFFit:
 
-     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace=0.0,refImDir='../refImages',useMemory='n',subSampFactor=55, includeResidual=False):
+     def __init__(self,realImage,nObj=1,filter='',detector='',weightCut=10000.0,despace='model',refImDir='../refImages',useMemory='n',subSampFactor=55, includeResidual=False):
 
          #the psf subsampling factor (not the one used in TinyTim, which we leave at 5)
          self.subSampFactor=subSampFactor
@@ -924,7 +925,11 @@ class PSFFit:
          date=eph.date(self.header['DATE-OBS']+' '+self.header['TIME-OBS'])
          self.mjd=date+15019.5
 
-         
+         self.despace=despace
+         if despace=='model':
+             fm=focusModel.focusModel()
+             self.despace=fm(self.mjd)
+             print 'Using focus from model of %s.'%(self.despace)
          if detector=='':
              if 'UVIS1' in self.header['APERTURE']:
                  self.detector='uv1'
@@ -1034,7 +1039,6 @@ class PSFFit:
 
          #the number of objects to psf fit
          self.nObj=nObj
-         self.despace=despace
          if filter=='':
              self.filter=self.header['FILTER'].strip()
          else:
@@ -1111,7 +1115,9 @@ class PSFFit:
      #produce the image which is PSFS+background
      # store this in self.image
      # write this to disk if requested, and will write the bg and psf images as well
-     def produceImage(self,Z=0.0,dE=[0.0,0.0,0.0], despace=0.0, write='n'):
+     def produceImage(self,Z=0.0,dE=[0.0,0.0,0.0], despace='model', write='n'):
+         if despace=='model':
+             despace=self.despace
          if self.bgPars['Z']<>Z:
              self.gen['bg']=0
 
@@ -1144,8 +1150,10 @@ class PSFFit:
 
              self.gen['imageWrite']=1
 
-     def genModelImage(self,imageName,Z=0.0,dE=[0.0,0.0,0.0], despace=0.0, addNoise=True,returnForXCorrelate=False):
-         self.produceImage(Z=0.0,dE=dE, despace=despace, write='n')
+     def genModelImage(self,imageName,Z=0.0,dE=[0.0,0.0,0.0], despace='model', addNoise=True,returnForXCorrelate=False):
+         if despace=='model':
+             despace=self.despace
+         self.produceImage(Z=Z,dE=dE, despace=despace, write='n')
          self.gen['image']=0
          image=self.image['image']
          noise=self.image['image']*0.0
@@ -1208,8 +1216,11 @@ class PSFFit:
          return
 
 
-     def produceImagePSF(self,dE=[0.0,0.0,0.0],despace=0.0,write='n',templatePSF=False):        
+     def produceImagePSF(self,dE=[0.0,0.0,0.0],despace='model',write='n',templatePSF=False):
          print 'Initializing PSF'
+
+         if despace=='model':
+             despace=self.despace
 
          self.image['psf']=num.zeros(self.realImData.shape,dtype=num.float32)        
          #generate the psfs and get their names
@@ -1259,7 +1270,11 @@ class PSFFit:
          for cci in range(self.nObj):
              imDat=superPSFResample(self.PSFdir+'/'+self.objects[cci]['psfName'],self.objects[cci]['x'],self.objects[cci]['y'],dE,useMemory=self.usingMemory,star=self.objects[cci]['star'],subSampFactor=self.subSampFactor)
              #multiply by the pixel area map
-             pixMapMulti=self.PAMdata[int(self.objects[cci]['y']+self.YCEN-self.YSIZE/2),int(self.objects[cci]['x']+self.XCEN-self.XSIZE/2)]
+             pmy,pmx=int(self.objects[cci]['y']+self.YCEN-self.YSIZE/2),int(self.objects[cci]['x']+self.XCEN-self.XSIZE/2)
+             if pmx<0 or pmx>=self.PAMdata.shape[1] or pmy<0 or pmy>=self.PAMdata.shape[0]:
+                 pixMapmulti=num.ones(self.PAMdata.shape,dtype=self.PAMdata.dtype)
+             else:
+                 pixMapMulti=self.PAMdata[pmy,pmx]
              imDat*=pixMapMulti
 
              if templatePSF:
@@ -1288,6 +1303,7 @@ class PSFFit:
              rsY=max(0,startY)
              reY=min(len(self.image['psf'][0])-1,endY)
 
+
              """
              print '\n\n\n\n'
              print rsY,reY,rsX,reX,(yLen/2-(y-rsY)),(yLen/2+(reY-y)),(xLen/2-(x-rsX)),(xLen/2+(reX-x))
@@ -1297,8 +1313,14 @@ class PSFFit:
              print num.arange(rsY,reY),num.arange((yLen/2-(y-rsY)),(yLen/2+(reY-y)))
              print num.arange(rsX,reX),num.arange((xLen/2-(x-rsX)),(xLen/2+(reX-x)))
              print '\n\n\n\n'
+
+
+             print self.image['psf'][rsY:reY,rsX:reX].shape
+             print imDat[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))].shape
+             print self.objects[cci]['M']
              """
-             self.image['psf'][rsY:reY,rsX:reX]+=self.objects[cci]['M']*imDat[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
+             if reY>rsY and reX>rsX:
+                 self.image['psf'][rsY:reY,rsX:reX]+=self.objects[cci]['M']*imDat[(yLen/2-(y-rsY)):(yLen/2+(reY-y)),(xLen/2-(x-rsX)):(xLen/2+(reX-x))]
 
              
              #add in the residual image
@@ -1565,11 +1587,11 @@ class Binary_PSFFit:
 #this is to do the minimization
 class Min4PSFFit:
 
-    def __init__(self, realIm, numObj, objPars, filter='',detector='',Zpars=False,useMemory='n',star=False,psfSubSampFactor=55,includeResidual=False):
+    def __init__(self, realIm, numObj, objPars, filter='',detector='',despace=0.0,Zpars=False,useMemory='n',star=False,psfSubSampFactor=55,includeResidual=False):
         global mask
         mask=-1.0
         global target
-        target =PSFFit(realIm, numObj, filter=filter,detector=detector,useMemory=useMemory,subSampFactor=psfSubSampFactor,includeResidual=includeResidual)
+        target =PSFFit(realIm, numObj, filter=filter,detector=detector,despace=despace,useMemory=useMemory,subSampFactor=psfSubSampFactor,includeResidual=includeResidual)
 
         for i in range(numObj):
             if not star:
